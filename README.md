@@ -1,2 +1,3 @@
-# zuse-examples
-Examples showing how to use the ZeroMQ-based FSM.
+# Zuse Examples
+
+Examples showing how to use Zuse, the ZeroMQ-based FSM.

@@ -130,7 +130,7 @@ void server_worker(zuse::context_t* server, int num) {
 		auto echo_count = stoi(w.frame(0));
 		for (auto i = 0; i < echo_count; ++i) {
 			this_thread::sleep_for(sleep_distr(eng));
-			w.send(w.frames().begin() + 1, w.frames().end());
+			socket.send(w.frames().begin() + 1, w.frames().end());
 		}
 	}).next_state(recving);
 	

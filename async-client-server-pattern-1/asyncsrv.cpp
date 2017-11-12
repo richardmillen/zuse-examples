@@ -75,7 +75,7 @@ void server_node() {
 	
 	vector<thread> workers;
 	for (auto i = 0; i < 5; ++i)
-		workers.push_back(thread(server_work, &context, i));
+		workers.push_back(thread(server_worker, &context, i));
 	
 	server.proxy(frontend, backend);
 	
@@ -93,7 +93,7 @@ void server_node() {
 // zuse's context needs to be thread safe. this piece of code was added as a kind of sentinel;
 // at the very least a zuse context will probably need access to the zeromq context held by
 // another zuse context.
-void server_work(zuse::context_t* server, int num) {
+void server_worker(zuse::context_t* server, int num) {
 	random_device rd;
 	mt19937 eng(rd());
 	uniform_int_distribution<> rep_distr(1, 5);

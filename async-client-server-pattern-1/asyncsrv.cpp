@@ -115,8 +115,6 @@ void server_worker(zuse::context_t* server, int num) {
 	state_t recving("receiving");
 	state_t sending("sending");
 	
-	worker.start(recving);
-	
 	zuse::message_t request("request message", {{"id", MATCH_ID}, {"msg", zuse::message_t::any}});
 	zuse::message_t reply("loop and send replies", {{"echo-count", R"(\d+)"}, {"id", MATCH_ID}, {"msg", zuse::message_t::any}});		
 	
@@ -134,6 +132,7 @@ void server_worker(zuse::context_t* server, int num) {
 		}
 	}).next_state(recving);
 	
+	worker.start(recving);
 	worker.execute(socket.recv());
 }
 

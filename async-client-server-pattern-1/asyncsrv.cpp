@@ -93,6 +93,14 @@ void server_node() {
 // zuse's context needs to be thread safe. this piece of code was added as a kind of sentinel;
 // at the very least a zuse context will probably need access to the zeromq context held by
 // another zuse context.
+// 
+// note that this isn't exactly a prime candidate for a state machine as it's really only in 
+// one state; having a receiving and sending state is a stretch, but this is a (exploratory) 
+// example so...
+// 
+// the context_t::defer() method executes a lambda function after on_message and any state
+// transitions have occurred. otherwise calling execute from within on_message would cause
+// the on_message associated with the input to be immediately invoked.
 void server_worker(zuse::context_t* server, int num) {
 	random_device rd;
 	mt19937 eng(rd());
@@ -107,20 +115,22 @@ void server_worker(zuse::context_t* server, int num) {
 	state_t recving("receiving");
 	state_t sending("sending");
 	
+	worker.start(recving);
+	
 	zuse::message_t request("request message", {{"id", MATCH_ID}, {"msg", zuse::message_t::any}});
 	zuse::message_t reply("loop and send replies", {{"echo-count", R"(\d+)"}, {"id", MATCH_ID}, {"msg", zuse::message_t::any}});		
 	
-	recving.on_message(request, [](zuse::event::context_t& c) {
-		cout << "server [" << num << "]: echoing (" << c.frame(0) << "," << c.frame(1)  << ")..." << endl;
+	recving.on_message(request, [&](zuse::event::context_t& w) {
+		cout << "server [" << num << "]: echoing (" << w.frame(0) << "," << w.frame(1)  << ")..." << endl;
 		
-		c.defer([&]() {	c.raise_event({ rep_distr(env), c.frame(0), c.frame(1) }); });
+		w.defer([&]() {	w.execute({ rep_distr(env), w.frame(0), w.frame(1) }); });
 	}).next_state(sending);
 	
-	sending.on_message(reply, [&](zuse::event::context_t& c) {
-		auto echo_count = stoi(c.frame(0));
+	sending.on_message(reply, [&](zuse::event::context_t& w) {
+		auto echo_count = stoi(w.frame(0));
 		for (auto i = 0; i < echo_count; ++i) {
 			this_thread::sleep_for(sleep_distr(eng));
-			c.send(c.frames().begin() + 1, c.frames().end());
+			w.send(w.frames().begin() + 1, w.frames().end());
 		}
 	}).next_state(recving);
 	

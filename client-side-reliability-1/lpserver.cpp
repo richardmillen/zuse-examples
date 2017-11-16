@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
 	
 	zuse::state_t serving("serving");
 	
-	zuse::message_t request("request", "hello");
-	zuse::message_t reply("reply", "world");
+	zuse::message_t request("outbound", R"(\d+)");
+	zuse::message_t reply("server response", request);
 	
 	serving.on_message(request, [&](zuse::context_t& c) {
 		++cycles;
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 		cout << "lpserver: handling request (" << c.frame() << ")..." << endl;
 		this_thread::sleep_for(1s);
 		
-		c.execute("world");
+		c.execute(c.frame());
 	});
 	
 	serving.on_message(reply, [&](zuse::context_t& c) {

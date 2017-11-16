@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 	}).next_state(sending);
 	
 	sending.on_message(wakeup, [](zuse::context_t& c) {
-		cout << "vent: sending tasks to workers..." << endl << endl;
+		cout << "vent: sending task to worker..." << endl << endl;
 		sink.send(c.frame());
 	});
 	

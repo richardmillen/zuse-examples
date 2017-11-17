@@ -27,6 +27,8 @@ int main(int argc, char* argv[]) {
 	auto total_temp = 0L;
 
 	recving.on_message(update, [](zuse::context_t& c) {
+		cout << "client: received update." << endl;
+
 		istringstream iss(c.frame());
 
 		int code, temperature, relhumid;

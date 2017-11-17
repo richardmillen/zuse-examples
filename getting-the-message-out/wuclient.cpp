@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 	zuse::state_t recving("receiving");
 	zuse::state_t finished("finished");
 	
-	zuse::message_t update("update", R"()");
+	zuse::message_t update("update", R"(^\d{3} -?(?!\d{3})\d+ (?!\d{4})\d+)");
 
 	auto update_num = 0;
 	auto total_temp = 0L;

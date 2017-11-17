@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
 		iss >> code >> temperature >> relhumid;
 
 		total_temp += temperature;
+		++update_num;
 	}).next_state(finished);
 
 	finished.add_condition([&](zuse::state_t& s) {

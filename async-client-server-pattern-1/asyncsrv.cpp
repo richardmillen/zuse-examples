@@ -34,21 +34,21 @@ int main(int argc, char* argv[]) {
 void client_node() {
 	auto id(random_id());
 	
-	zuse::context_t client;
+	zuse::context client;
 	
-	zuse::state_t ready("sending / receiving");
+	zuse::state ready("sending / receiving");
 	
-	zuse::message_t request("request to server", R"(request \d+)");
-	zuse::message_t response("message from server");
+	zuse::message request("request to server", R"(request \d+)");
+	zuse::message response("message from server");
 	
-	ready.on_message(request, [&](zuse::context_t& c) {
+	ready.on_message(request, [&](zuse::context& c) {
 		socket.send(c.frames());
 	});
-	ready.on_message(response, [&](zuse::context_t& c) {
+	ready.on_message(response, [&](zuse::context& c) {
 		cout << "client [" << id << "]: " << c.frame() << endl;
 	});
 	
-	zuse::socket_t socket(client, zuse::socket_type::dealer);
+	zuse::socket socket(client, zuse::socket_type::dealer);
 	socket.setsockopt(zuse::opt_type::identity, id);
 	socket.connect("tcp://localhost:5570");
 	
@@ -65,10 +65,10 @@ void client_node() {
 }
 
 void server_node() {
-	zuse::context_t server;
+	zuse::context server;
 	
-	zuse::socket_t frontend(server, zuse::socket_type::router);
-	zuse::socket_t backend(server, zuse::socket_type::dealer);
+	zuse::socket frontend(server, zuse::socket_type::router);
+	zuse::socket backend(server, zuse::socket_type::dealer);
 	
 	frontend.bind("tcp://*:5570", zuse::bind_type::router);
 	backend.bind("inproc://backend", zuse::bind_type::dealer);
@@ -85,7 +85,7 @@ void server_node() {
 
 // server worker
 // 
-// note the context_t(context_t&) constructor shown below. the server worker in the zguide 
+// note the context(context&) constructor shown below. the server worker in the zguide 
 // example shares the server context as it's thread safe.
 // right now it doesn't look like there should be a one-to-one mapping from a zuse to zeromq
 // context because each thread is likely to be its own state machine. yet to determine how
@@ -98,33 +98,33 @@ void server_node() {
 // one state; having a receiving and sending state is a stretch, but this is a (exploratory) 
 // example so...
 // 
-// the context_t::defer() method executes a lambda function after on_message and any state
+// the context::defer() method executes a lambda function after on_message and any state
 // transitions have occurred. otherwise calling execute from within on_message would cause
 // the on_message associated with the input to be immediately invoked.
-void server_worker(zuse::context_t* server, int num) {
+void server_worker(zuse::context* server, int num) {
 	random_device rd;
 	mt19937 eng(rd());
 	uniform_int_distribution<> rep_distr(1, 5);
 	uniform_int_distribution<> sleep_distr(1, 1000);
 	
-	zuse::context_t worker(*server);
+	zuse::context worker(*server);
 	
-	zuse::socket_t socket(worker, zuse::socket_type::dealer);
+	zuse::socket socket(worker, zuse::socket_type::dealer);
 	socket->connect("inproc://backend");
 	
-	state_t recving("receiving");
-	state_t sending("sending");
+	state recving("receiving");
+	state sending("sending");
 	
-	zuse::message_t request("request message", {{"id", MATCH_ID}, {"msg", zuse::message_t::any}});
-	zuse::message_t reply("loop and send replies", {{"echo-count", R"(\d+)"}, {"id", MATCH_ID}, {"msg", zuse::message_t::any}});		
+	zuse::message request("request message", {{"id", MATCH_ID}, {"msg", zuse::message::any}});
+	zuse::message reply("loop and send replies", {{"echo-count", R"(\d+)"}, {"id", MATCH_ID}, {"msg", zuse::message::any}});		
 	
-	recving.on_message(request, [&](zuse::event::context_t& w) {
+	recving.on_message(request, [&](zuse::event::context& w) {
 		cout << "server [" << num << "]: echoing (" << w.frame(0) << "," << w.frame(1)  << ")..." << endl;
 		
 		w.defer([&]() {	w.execute({ rep_distr(env), w.frame(0), w.frame(1) }); });
 	}).next_state(sending);
 	
-	sending.on_message(reply, [&](zuse::event::context_t& w) {
+	sending.on_message(reply, [&](zuse::event::context& w) {
 		auto echo_count = stoi(w.frame(0));
 		for (auto i = 0; i < echo_count; ++i) {
 			this_thread::sleep_for(sleep_distr(eng));

@@ -19,20 +19,20 @@ int main(int argc, char* argv[]) {
 	uniform_int_distribution<> temp_distr(-5, 90);
 	uniform_int_distribution<> hum_distr(0, 100);
 
-	zuse::context_t publisher;
+	zuse::context publisher;
 
-	zuse::socket_t socket(publisher, zuse::socket_type::pub);
+	zuse::socket socket(publisher, zuse::socket_type::pub);
 	socket.bind(bind_addr);
 
-	zuse::state_t publishing("publishing weather updates");
+	zuse::state publishing("publishing weather updates");
 
-	zuse::message_t update("weather update", R"(^\d{3} -?(?!\d{3})\d+ (?!\d{4})\d+)");
+	zuse::message update("weather update", R"(^\d{3} -?(?!\d{3})\d+ (?!\d{4})\d+)");
 
-	publishing.on_enter([](zuse::context_t& c) {
+	publishing.on_enter([](zuse::context& c) {
 		cout << "server: sending data to subscribers..." << endl;
 	});
 
-	publishing.on_message(update, [](zuse::context_t& c) {
+	publishing.on_message(update, [](zuse::context& c) {
 		socket.send(c.frames());
 	});
 

@@ -11,36 +11,36 @@ using namespace std;
 const char* server_addr = "tcp://localhost:5559";
 
 int main(int argc, char* argv[]) {
-	zuse::context_t requester;
+	zuse::context requester;
 	
 	cout << "client: connecting to server '" << server_addr << "'..." << endl;
-	zuse::socket_t socket(requester, zuse::socket_type::req);
+	zuse::socket socket(requester, zuse::socket_type::req);
 	socket.connect(server_addr);
 	
-	zuse::state_t sending("sending");
-	zuse::state_t recving("receiving");
-	zuse::state_t finished("finished");
+	zuse::state sending("sending");
+	zuse::state recving("receiving");
+	zuse::state finished("finished");
 	
-	zuse::message_t request("client request", "hello");
-	zuse::message_t reply("server response", "world");
+	zuse::message request("client request", "hello");
+	zuse::message reply("server response", "world");
 	
 	const auto total = 100;
 	int count_down = total;
 
-	sending.on_message(request, [&](zuse::context_t& c) {
+	sending.on_message(request, [&](zuse::context& c) {
 		socket.send(c.frames());
 	}).next_state(recving);
 
-	recving.on_enter([&](zuse::context_t& c) {
+	recving.on_enter([&](zuse::context& c) {
 		requester.execute(socket.recv());
 	});
 
-	recving.on_message(reply, [&](zuse::context_t& c) {
+	recving.on_message(reply, [&](zuse::context& c) {
 		--count_down;
 		cout << "client: received reply #" << (total - count_down) << ", '" << c.frame() << "'." << endl;
 	}).next_state({finished, sending});
 
-	finished.add_condition([&](zuse::state_t& s) {
+	finished.add_condition([&](zuse::state& s) {
 		return count_down > 0;
 	});
 

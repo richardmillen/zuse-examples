@@ -18,30 +18,30 @@ int main(int argc, char* argv[]) {
 	auto sequence = 0;
 	auto retries_left = MAX_RETRIES;
 	
-	zuse::state_t sending("sending");
-	zuse::state_t recving("receiving");
+	zuse::state sending("sending");
+	zuse::state recving("receiving");
 	
-	no_server.add_condition([&](zuse::state_t& s) {
+	no_server.add_condition([&](zuse::state& s) {
 		return --retries_left == 0;
 	});
 	
-	zuse::message_t out("outbound", R"(\d+)");
-	zuse::message_t response("server response", out);
+	zuse::message out("outbound", R"(\d+)");
+	zuse::message response("server response", out);
 	
-	sending.on_enter([&](zuse::context_t& c) {
+	sending.on_enter([&](zuse::context& c) {
 		cout << "lpclient: sending request " << ++sequence << " to server..." << endl;
 		client.stream() << sequence << zuse::endm;
 	}
 	
-	sending.on_message(out, [&](zuse::context_t& c) {
+	sending.on_message(out, [&](zuse::context& c) {
 		socket.send(c.frames());
 	}).next_state(recving);
 	
-	recving.on_enter([&](zuse::context_t& c) {
+	recving.on_enter([&](zuse::context& c) {
 		client.poll(socket, MAX_RETRIES, TIMEOUT_SECS);
 	});
 	
-	recving.on_message(response, [&](zuse::context_t& c) {
+	recving.on_message(response, [&](zuse::context& c) {
 		auto reply = stoi(c.frame());
 		
 		if (reply != sequence) {
@@ -54,14 +54,14 @@ int main(int argc, char* argv[]) {
 		retries_left = MAX_RETRIES;
 	}).next_state(sending);
 	
-	recving.on_timeout([&](zuse::context_t& c) {
+	recving.on_timeout([&](zuse::context& c) {
 		cerr << "lpclient: no response from server, retrying..." << endl;
 		
 		socket = make_socket(context);
 		socket.stream() << sequence << zuse::endm;
 	});
 	
-	recving.on_failed([&](zuse::context_t& c) {
+	recving.on_failed([&](zuse::context& c) {
 		cerr << "lpclient: server seems to be offline, abandoning..." << endl;
 		c.abort();
 	})
@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-zuse::socket_t make_socket(zuse::context_t& context) {
-	zuse::socket_t socket(context, zuse::socket_type::req);
+zuse::socket make_socket(zuse::context& context) {
+	zuse::socket socket(context, zuse::socket_type::req);
 	socket.connect("tcp://localhost:5555");
 	client.setsockopt(ZMQ_LINGER, false);
 	return client;

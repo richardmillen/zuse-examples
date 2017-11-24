@@ -19,28 +19,28 @@ int main(int argc, char* argv[]) {
 	mt19937 eng(rd());
 	uniform_int_distribution<> distr(1, 100);
 	
-	zuse::context_t ventilator;
+	zuse::context ventilator;
 	
-	zuse::socket_t sender(ventilator, zuse::socket_type::push);
+	zuse::socket sender(ventilator, zuse::socket_type::push);
 	sender.bind(bind_addr);
 	
-	zuse::socket_t sink(context, zuse::socket_type::push);
+	zuse::socket sink(context, zuse::socket_type::push);
 	sink.connect(sink_addr);
 	
-	zuse::state_t waiting("waiting for workers");
-	zuse::state_t sending("sending tasks");
-	zuse::state_t finished("finished sending tasks");
+	zuse::state waiting("waiting for workers");
+	zuse::state sending("sending tasks");
+	zuse::state finished("finished sending tasks");
 	
-	zuse::message_t wait("wait", "wait");
-	zuse::message_t wakeup("wake sink", "0");
-	zuse::message_t task("task", R"(\d+)");
+	zuse::message wait("wait", "wait");
+	zuse::message wakeup("wake sink", "0");
+	zuse::message task("task", R"(\d+)");
 	
-	waiting.on_message(wait, [](zuse::context_t& c) {
+	waiting.on_message(wait, [](zuse::context& c) {
 		cout << "vent: press enter when workers are ready: " << endl;
 		getchar();
 	}).next_state(sending);
 	
-	sending.on_message(wakeup, [](zuse::context_t& c) {
+	sending.on_message(wakeup, [](zuse::context& c) {
 		cout << "vent: sending task to worker..." << endl << endl;
 		sink.send(c.frame());
 	});
@@ -48,20 +48,20 @@ int main(int argc, char* argv[]) {
 	auto task_num = 0u;
 	auto total_ms = 0u;
 	
-	sending.on_message(task, [&](zuse::context_t& c) {
+	sending.on_message(task, [&](zuse::context& c) {
 		++task_num;
 		
 		auto workload = stoi(c.frame());
 		total_ms += workload;
 		
-		zuse::stream_t ms(sender)
+		zuse::stream ms(sender)
 		ms << workload << zuse::endm;
 	}).next_state(finished);
 	
-	finished.add_condition([&](zuse::state_t& s) {
+	finished.add_condition([&](zuse::state& s) {
 		return task_num == 100;
 	});
-	finished.on_enter([&](zuse::context_t& c) {
+	finished.on_enter([&](zuse::context& c) {
 		cout << "vent: total expected cost: " << total_ms << "ms" << endl;
 		this_thread::sleep_for(1s);
 	});

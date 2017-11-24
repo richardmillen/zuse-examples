@@ -34,34 +34,34 @@ int main(int argc, char* argv[]) {
 }
 
 void client_node() {
-	zuse::context_t context;
+	zuse::context context;
 	
-	zuse::state_t recving("receiving");
-	zuse::state_t sending("sending");
+	zuse::state recving("receiving");
+	zuse::state sending("sending");
 	
-	zuse::message_t inbound("any message from server");
-	zuse::message_t request("request to server", R"(request \d+)");
+	zuse::message inbound("any message from server");
+	zuse::message request("request to server", R"(request \d+)");
 	
 	unsigned req_count;
 	auto recv_count = 0;
 	auto id = random_id();
 	
-	recving.on_enter([&](zuse::event::context_t& c) {
+	recving.on_enter([&](zuse::event::context& c) {
 		recv_count = 0;
 	});
-	recving.on_recv(inbound, [&](zuse::event::context_t& c) {
+	recving.on_recv(inbound, [&](zuse::event::context& c) {
 		cout "client [" << id << "]: " << c.frame() << endl;
 		++recv_count;
 	}).next_state(sending);
-	recving.on_exit([&](zuse::event::context_t& c) {
+	recving.on_exit([&](zuse::event::context& c) {
 		c.defer([&]() { c.send() << "request " << ++req_count; });
 	});
 	
-	sending.add_condition([&](zuse::state_t& s) {
+	sending.add_condition([&](zuse::state& s) {
 		return recv_count >= 100;
 	});
 	
-	sending.on_send(request, [](zuse::event::context_t& c) {
+	sending.on_send(request, [](zuse::event::context& c) {
 		cout << "client [" << id << "]: sending '" << c.frame() << "'..." << endl;
 	}).next_state(recving);
 	
@@ -71,7 +71,7 @@ void client_node() {
 }
 
 void server_node() {
-	zuse::context_t context;
+	zuse::context context;
 	
 	context.bind("tcp://*:5570", zuse::bind_type::router);
 	context.bind("inproc://backend", zuse::bind_type::dealer);
@@ -95,27 +95,27 @@ void server_node() {
 // the worker can be in two states; receiving or sending. this was really done for 
 // demonstration purposes as the code is so simple it only needs a single state to
 // receive requests and send replies.
-void server_work(zuse::context_t* context, int num) {
+void server_work(zuse::context* context, int num) {
 	random_device rd;
 	mt19937 eng(rd());
 	uniform_int_distribution<> rep_distr(1, 5);
 	uniform_int_distribution<> sleep_distr(1, 1000);
 	
-	state_t recving("receiving");
-	state_t sending("sending");
+	state recving("receiving");
+	state sending("sending");
 	
 	context->connect("inproc://backend", zuse::connect_type::dealer);
 	
-	zuse::message_t request("request message", {{"id", MATCH_ID}, {"msg", zuse::message_t::any}});
-	zuse::message_t reply("loop and send replies", {{"echo-count", R"(\d+)"}, {"id", MATCH_ID}, {"msg", zuse::message_t::any}});		
+	zuse::message request("request message", {{"id", MATCH_ID}, {"msg", zuse::message::any}});
+	zuse::message reply("loop and send replies", {{"echo-count", R"(\d+)"}, {"id", MATCH_ID}, {"msg", zuse::message::any}});		
 	
-	recving.on_recv(request, [](zuse::event::context_t& c) {
+	recving.on_recv(request, [](zuse::event::context& c) {
 		cout << "server [" << num << "]: echoing (" << c.frame(0) << "," << c.frame(1)  << ")..." << endl;
 		
 		c.defer([&]() {	c.raise_event({ rep_distr(env), c.frame(0), c.frame(1) }); });
 	}).next_state(sending);
 	
-	sending.on_event(reply, [&](zuse::event::context_t& c) {
+	sending.on_event(reply, [&](zuse::event::context& c) {
 		auto echo_count = stoi(c.frame(0));
 		for (auto i = 0; i < echo_count; ++i) {
 			this_thread::sleep_for(sleep_distr(eng));

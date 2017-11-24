@@ -11,35 +11,35 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
-	zuse::context_t queue;
+	zuse::context queue;
 	
-	zuse::socket_t frontend(queue, zuse::socket_type::router);
-	zuse::socket_t backend(queue, zuse::socket_type::router);
+	zuse::socket frontend(queue, zuse::socket_type::router);
+	zuse::socket backend(queue, zuse::socket_type::router);
 	
 	frontend.bind("tcp://*.5555");
 	backend.bind("tcp://*.5556");
 	
-	zuse::state_t polling("polling");
+	zuse::state polling("polling");
 	
-	zuse::message_t worker_ready("worker is ready", {{"id", zuse::message_t::any}, {"envelope", ""}, {"ready", "READY"}});
-	zuse::message_t worker_reply("reply received from worker", {{"id", zuse::message_t::any}, {"envelope", ""}, {"msg", zuse::message_t::any_frames}});
-	zuse::message_t client_request("request received from client", zuse::message_t::any_frames);
+	zuse::message worker_ready("worker is ready", {{"id", zuse::message::any}, {"envelope", ""}, {"ready", "READY"}});
+	zuse::message worker_reply("reply received from worker", {{"id", zuse::message::any}, {"envelope", ""}, {"msg", zuse::message::any_frames}});
+	zuse::message client_request("request received from client", zuse::message::any_frames);
 	
 	queue<string> worker_queue;
 	
-	polling.on_message(worker_ready, [](zuse::context_t& c) {
+	polling.on_message(worker_ready, [](zuse::context& c) {
 		cout << "spqueue: worker ready." << endl;
 		worker_queue.push(c.frames().front());
 	});
 	
-	polling.on_message(worker_reply, [](zuse::context_t& c) {
+	polling.on_message(worker_reply, [](zuse::context& c) {
 		cout << "spqueue: received reply from worker." << endl;
 		worker_queue.push(c.frames().front());
 		cout << "spqueue: forwarding reply to client..." << endl;
 		frontend.send(c.frames().begin() + 2, c.frames().end());
 	});
 	
-	polling.on_message(client_request, [&](zuse::context_t& c) {
+	polling.on_message(client_request, [&](zuse::context& c) {
 		cout << "spqueue: received request from client." << endl;
 		auto worker_id = worker_queue.front();
 		worker_queue.pop();

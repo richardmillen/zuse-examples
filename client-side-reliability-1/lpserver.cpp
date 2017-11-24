@@ -21,17 +21,17 @@ int main(int argc, char* argv[]) {
 	uniform_int_distribution<> crash_distr(0, 29);
 	uniform_int_distribution<> slow_distr(0, 9);
 	
-	zuse::context_t server;
+	zuse::context server;
 	
-	zuse::socket_t socket(server, zuse::socket_type::rep);
+	zuse::socket socket(server, zuse::socket_type::rep);
 	socket.bind(bind_addr);
 	
-	zuse::state_t serving("serving");
+	zuse::state serving("serving");
 	
-	zuse::message_t request("outbound", R"(\d+)");
-	zuse::message_t reply("server response", request);
+	zuse::message request("outbound", R"(\d+)");
+	zuse::message reply("server response", request);
 	
-	serving.on_message(request, [&](zuse::context_t& c) {
+	serving.on_message(request, [&](zuse::context& c) {
 		++cycles;
 		
 		if (cycles > 3 && crash_distr(eng) == 0) {
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 		c.execute(c.frame());
 	});
 	
-	serving.on_message(reply, [&](zuse::context_t& c) {
+	serving.on_message(reply, [&](zuse::context& c) {
 		cout << "lpserver: sending reply..." << endl;
 		socket.send(c.frames());
 	}

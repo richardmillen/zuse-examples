@@ -11,21 +11,21 @@ using namespace std;
 const char* server_addr = "tcp://localhost:5555";
 
 int main(int argc, char* argv[]) {
-	zuse::context_t context;
-	zuse::socket_t socket(context, zuse::socket_type::req);
+	zuse::context context;
+	zuse::socket socket(context, zuse::socket_type::req);
 	
-	zuse::state_t sending("sending");
-	zuse::state_t recving("receiving");
+	zuse::state sending("sending");
+	zuse::state recving("receiving");
 	
-	zuse::message_t request("client request", "hello");
-	zuse::message_t reply("server response", "world");
+	zuse::message request("client request", "hello");
+	zuse::message reply("server response", "world");
 	
-	sending.on_message(request, [&](zuse::context_t& c) {
+	sending.on_message(request, [&](zuse::context& c) {
 		cout << "client: sending '" << c.frame() << "'..." << endl;
 		socket.send(c.frames());
 	}).next_state(recving);
 	
-	recving.on_message(reply, [](zuse::context_t& c) {
+	recving.on_message(reply, [](zuse::context& c) {
 		cout << "client: received '" << c.frame() << "'." << endl;
 	}).next_state(sending);
 	

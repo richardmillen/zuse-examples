@@ -12,25 +12,25 @@ const char* frontend_addr = "tcp://*:5559";
 const char* backend_addr = "tcp://*:5560";
 
 int main(int argc, char* argv[]) {
-	zuse::context_t broker;
+	zuse::context broker;
 	
 	cout << "broker: listening for requests at '" << frontend_addr << "'..." << endl;
-	zuse::socket_t frontend(broker, zuse::socket_type::router);
+	zuse::socket frontend(broker, zuse::socket_type::router);
 	frontend.bind(frontend_addr);
 	
 	cout << "broker: workers allowed to connect to '" << backend_addr << "'..." << endl;
-	zuse::socket_t backend(broker, zuse::socket_type::dealer);
+	zuse::socket backend(broker, zuse::socket_type::dealer);
 	backend.bind(backend_addr);
 	
-	zuse::state_t serving("serving clients and workers");
+	zuse::state serving("serving clients and workers");
 	
-	zuse::message_t message("any message");
+	zuse::message message("any message");
 
-	serving.on_message(message, backend, [](zuse::context_t& c) {
+	serving.on_message(message, backend, [](zuse::context& c) {
 		frontend.send(c.frames());
 	});
 
-	serving.on_message(message, frontend, [](zuse::context_t& c) {
+	serving.on_message(message, frontend, [](zuse::context& c) {
 		backend.send(c.frames());
 	});
 

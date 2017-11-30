@@ -4,10 +4,6 @@ Zuse **will be** a ZeroMQ-based API (C++ binding) modeled on the [finite-state m
 
 This project *currently* contains 'sketches' of how Zuse might be used, but will eventually contain working examples.
 
-## zuse
-
-Zuse is intended to be an API for ZeroMQ, modeled on the [finite-state machine](https://en.wikipedia.org/wiki/Finite-state_machine).
-
 ## Calculating Space
 
 The Zuse project got its name from [Konrad Zuse](https://en.wikipedia.org/wiki/Konrad_Zuse) on the basis that **a)** [Zuse proposed that the universe is being computed by some sort of cellular automaton](https://en.wikipedia.org/wiki/Calculating_Space) and **b)** many of the [ZeroMQ](https://github.com/zeromq) projects that I've seen start with the letter *Z* by convention.

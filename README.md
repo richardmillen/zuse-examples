@@ -1,8 +1,8 @@
 # Zuse Examples
 
-Zuse **will be** a ZeroMQ-based API (C++ binding) modeled on the [finite-state machine](https://en.wikipedia.org/wiki/Finite-state_machine).
+Zuse **may eventually be** a ZeroMQ-based API (C++ binding) modeled on the [finite-state machine](https://en.wikipedia.org/wiki/Finite-state_machine). However I'm no longer working on it as my plans to use ZeroMQ have changed, making this redundant.
 
-This project *currently* contains 'sketches' of how Zuse might be used, but will eventually contain working examples. 
+This project *currently* contains 'sketches' of how Zuse might be used, but the intention has been to turn them into working examples.
 
 The examples are based on those provided in the [ZeroMQ guide](http://zguide.zeromq.org/).
 
